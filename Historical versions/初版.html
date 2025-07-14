@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖程序</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .draw-history-container {
+            width: 300px;
+            height: 100vh;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            overflow-y: auto;
+        }
+        .draw-history h3 {
+            margin-bottom: 10px;
+        }
+        .draw-history ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .draw-history li {
+            background-color: #e9ecef;
+            margin-bottom: 5px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>抽奖程序</h2>
+        <input type="text" id="prizeName" placeholder="奖品名称">
+        <input type="number" id="prizeProbability" step="any" min="0" max="1" placeholder="中奖概率 (0-1)">
+        <button onclick="addPrize()">添加奖品</button>
+        <button onclick="drawPrize()">开始抽奖</button>
+        <div class="result" id="result"></div>
+        <ul id="prizesList"></ul>
+        <button onclick="exportToExcel()">导出抽奖记录为Excel</button>
+    </div>
+
+    <div class="draw-history-container">
+        <div class="draw-history">
+            <h3>抽奖记录</h3>
+            <ul id="drawHistory"></ul>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script>
+        const prizes = [];
+        const drawHistory = [];
+
+        // 添加奖品到列表
+        function addPrize() {
+            const prizeName = document.getElementById('prizeName').value.trim();
+            const prizeProbability = parseFloat(document.getElementById('prizeProbability').value);
+
+            if (!prizeName || isNaN(prizeProbability) || prizeProbability <= 0 || prizeProbability > 1) {
+                alert('请输入有效的奖品名称和概率');
+                return;
+            }
+
+            prizes.push({ name: prizeName, probability: prizeProbability });
+            updatePrizesList();
+
+            // 清空输入框
+            document.getElementById('prizeName').value = '';
+            document.getElementById('prizeProbability').value = '';
+        }
+
+        // 更新奖品列表显示
+        function updatePrizesList() {
+            const listElement = document.getElementById('prizesList');
+            listElement.innerHTML = '';
+
+            prizes.forEach((prize, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${prize.name} (概率: ${prize.probability})`;
+                listElement.appendChild(li);
+            });
+        }
+
+        // 开始抽奖
+        function drawPrize() {
+            let randomValue = Math.random();
+            let cumulativeProbability = 0;
+            let drawnPrize = null;
+
+            for (let i = 0; i < prizes.length; i++) {
+                cumulativeProbability += prizes[i].probability;
+                if (randomValue < cumulativeProbability) {
+                    drawnPrize = prizes[i];
+                    break;
+                }
+            }
+
+            if (drawnPrize) {
+                document.getElementById('result').textContent = `恭喜您抽到了: ${drawnPrize.name}`;
+                drawHistory.unshift(`恭喜您抽到了: ${drawnPrize.name}`);
+            } else {
+                document.getElementById('result').textContent = '很遗憾，没有抽到任何奖品';
+                drawHistory.unshift('很遗憾，没有抽到任何奖品');
+            }
+
+            updateDrawHistory();
+        }
+
+        // 更新抽奖记录显示
+        function updateDrawHistory() {
+            const historyElement = document.getElementById('drawHistory');
+            historyElement.innerHTML = '';
+
+            drawHistory.forEach(record => {
+                const li = document.createElement('li');
+                li.textContent = record;
+                historyElement.appendChild(li);
+            });
+        }
+
+        // 导出抽奖记录为Excel
+        function exportToExcel() {
+            const worksheetData = [['抽奖记录']];
+            drawHistory.forEach(record => {
+                worksheetData.push([record]);
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+            XLSX.writeFile(workbook, '抽奖记录.xlsx');
+        }
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖程序</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+            position: relative;
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .member-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .member-info p {
+            margin: 5px 0;
+        }
+        .admin-info {
+            color: red;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .draw-history-container {
+            width: 300px;
+            height: calc(100vh - 40px); /* Adjusted to fill the viewport */
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .draw-history h3 {
+            margin-bottom: 10px;
+        }
+        .draw-history ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .draw-history li {
+            background-color: #e9ecef;
+            margin-bottom: 5px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .flash {
+            animation: flash 1s ease-in-out;
+        }
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .modal button:hover {
+            background-color: #0056b3;
+        }
+        .prize-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .prize-list p {
+            margin: 5px 0;
+        }
+        .admin-prize-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .admin-prize-item input {
+            width: 60%;
+            margin-right: 10px;
+        }
+        .admin-prize-item button {
+            width: 40%;
+        }
+        .source-label {
+            font-size: 0.8em;
+            color: green;
+        }
+        .copyright {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginOverlay" class="overlay">
+        <div class="modal">
+            <h2>请选择成员列表文件</h2>
+            <input type="file" id="fileInput" accept=".xlsx" onchange="loadMembersFromFile()">
+            <h2>请输入您的成员编号</h2>
+            <input type="text" id="memberIdInput" placeholder="成员编号">
+            <button onclick="validateMember()">确认</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div id="memberInfo" class="member-info" style="display: none;">
+            <p><strong id="infoLabel">编号:</strong> <span id="memberIdDisplay"></span></p>
+            <p><strong>姓名:</strong> <span id="memberNameDisplay"></span></p>
+            <p><strong>当前余额:</strong> <span id="memberBalanceDisplay"></span></p>
+            <button onclick="logout()">退出登录</button>
+        </div>
+
+        <div class="container" id="mainContainer" style="display: none;">
+            <h2>抽奖程序</h2>
+            <div id="prizeList" class="prize-list"></div>
+            <button onclick="drawPrize()" class="animated-button">开始抽奖</button>
+            <button onclick="soloHa()" class="animated-button">梭哈</button>
+            <div class="result" id="result"></div>
+            <ul id="prizesList"></ul>
+        </div>
+
+        <div class="container" id="adminContainer" style="display: none;">
+            <h2>管理界面</h2>
+            <div id="adminPrizesList">
+                <!-- Admin Prize Items will be dynamically added here -->
+            </div>
+            <input type="text" id="prizeNameAdmin" placeholder="奖品名称">
+            <input type="number" id="prizeProbabilityAdmin" step="any" min="0" max="100" placeholder="中奖概率 (%)">
+            <button onclick="addPrizeAdmin()" class="animated-button">添加奖品</button>
+            <button onclick="importPrizesFromExcel()" class="animated-button">从Excel导入奖品</button>
+            <button onclick="exportPrizesToExcel()" class="animated-button">保存概率设置</button>
+            <button onclick="exportToExcel()" class="animated-button">导出抽奖记录为Excel</button>
+        </div>
+    </div>
+
+    <div class="draw-history-container">
+        <div class="draw-history">
+            <h3>抽奖记录</h3>
+            <ul id="drawHistory"></ul>
+        </div>
+    </div>
+
+    <div class="copyright">
+        Design by Naohiro
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script>
+        const prizes = [];
+        const drawHistory = [];
+        let members = {};
+        let loggedInMember = null;
+        let participatedMembers = new Set();
+        let sourceFile = '';
+
+        // 从文件中读取成员信息
+        function loadMembersFromFile(event) {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('请选择一个有效的Excel文件');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: ['id', 'name', 'balance'] });
+
+                jsonData.forEach(member => {
+                    members[member.id] = member;
+                });
+
+                document.getElementById('loginOverlay').style.display = 'block';
+            };
+
+            reader.onerror = function() {
+                alert('无法读取文件，请重试。');
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 验证成员
+        function validateMember() {
+            const memberId = document.getElementById('memberIdInput').value.trim();
+            if (memberId === "A") {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('adminContainer').style.display = 'block';
+                document.getElementById('memberInfo').style.display = 'block';
+                document.getElementById('infoLabel').textContent = "角色:";
+                document.getElementById('memberIdDisplay').textContent = "管理员";
+                document.getElementById('memberIdDisplay').classList.add('admin-info');
+                document.getElementById('memberNameDisplay').textContent = "";
+                document.getElementById('memberBalanceDisplay').textContent = "";
+                updateAdminPrizeList();
+            } else if (members[memberId]) {
+                if (participatedMembers.has(memberId)) {
+                    alert('您已经参加过抽奖了！');
+                    return;
+                }
+                loggedInMember = members[memberId];
+                if (loggedInMember.balance < 50) {
+                    alert('余额不足，无法抽奖');
+                    return;
+                }
+                const confirmMessage = `欢迎 ${loggedInMember.name}！抽奖界面只能进入一次，请慎重考虑！`;
+                if (confirm(confirmMessage)) {
+                    participatedMembers.add(memberId);
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('mainContainer').style.display = 'block';
+                    document.getElementById('memberInfo').style.display = 'block';
+                    document.getElementById('infoLabel').textContent = "编号:";
+                    document.getElementById('memberIdDisplay').textContent = loggedInMember.id;
+                    document.getElementById('memberIdDisplay').classList.remove('admin-info');
+                    document.getElementById('memberNameDisplay').textContent = loggedInMember.name;
+                    document.getElementById('memberBalanceDisplay').textContent = loggedInMember.balance;
+                    updatePrizeList();
+                }
+            } else {
+                alert('无效的成员编号，请重新输入。');
+            }
+        }
+
+        // 登出
+        function logout() {
+            loggedInMember = null;
+            document.getElementById('loginOverlay').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('adminContainer').style.display = 'none';
+            document.getElementById('memberInfo').style.display = 'none';
+        }
+
+        // 添加奖品到列表 (管理员)
+        function addPrizeAdmin() {
+            const prizeName = document.getElementById('prizeNameAdmin').value.trim();
+            const prizeProbability = parseFloat(document.getElementById('prizeProbabilityAdmin').value);
+
+            if (!prizeName) {
+                alert('请输入有效的奖品名称');
+                return;
+            }
+
+            if (isNaN(prizeProbability) || prizeProbability <= 0 || prizeProbability > 100) {
+                alert('请输入有效的中奖概率 (0 到 100)');
+                return;
+            }
+
+            if (prizes.some(prize => prize.name === prizeName)) {
+                alert('奖品名称已存在，请选择其他名称');
+                return;
+            }
+
+            const totalProbability = calculateTotalProbability();
+            if (totalProbability + prizeProbability / 100 > 1) {
+                alert('总中奖概率不能超过100%');
+                return;
+            }
+
+            prizes.push({ name: prizeName, probability: prizeProbability / 100, source: '' });
+            updateAdminPrizeList();
+
+            // 清空输入框
+            document.getElementById('prizeNameAdmin').value = '';
+            document.getElementById('prizeProbabilityAdmin').value = '';
+        }
+
+        // 删除奖品 (管理员)
+        function deletePrize(index) {
+            prizes.splice(index, 1);
+            updateAdminPrizeList();
+        }
+
+        // 修改奖品 (管理员)
+        function editPrize(index) {
+            const prizeItem = document.querySelector(`#adminPrize-${index}`);
+            const prizeNameInput = prizeItem.querySelector('.prize-name-input');
+            const prizeProbabilityInput = prizeItem.querySelector('.prize-probability-input');
+
+            const newName = prizeNameInput.value.trim();
+            const newProbability = parseFloat(prizeProbabilityInput.value);
+
+            if (!newName) {
+                alert('请输入有效的奖品名称');
+                return;
+            }
+
+            if (isNaN(newProbability) || newProbability <= 0 || newProbability > 100) {
+                alert('请输入有效的中奖概率 (0 到 100)');
+                return;
+            }
+
+            if (prizes.some((prize, i) => i !== index && prize.name === newName)) {
+                alert('奖品名称已存在，请选择其他名称');
+                return;
+            }
+
+            const currentProbability = prizes[index].probability;
+            const totalProbability = calculateTotalProbability() - currentProbability;
+            if (totalProbability + newProbability / 100 > 1) {
+                alert('总中奖概率不能超过100%');
+                return;
+            }
+
+            prizes[index].name = newName;
+            prizes[index].probability = newProbability / 100;
+            updateAdminPrizeList();
+        }
+
+        // 计算总概率
+        function calculateTotalProbability() {
+            return prizes.reduce((sum, prize) => sum + prize.probability, 0);
+        }
+
+        // 更新奖品列表显示 (管理员)
+        function updateAdminPrizeList() {
+            const adminPrizesListElement = document.getElementById('adminPrizesList');
+            adminPrizesListElement.innerHTML = '';
+
+            prizes.forEach((prize, index) => {
+                const div = document.createElement('div');
+                div.className = 'admin-prize-item';
+                div.id = `adminPrize-${index}`;
+
+                const prizeNameInput = document.createElement('input');
+                prizeNameInput.type = 'text';
+                prizeNameInput.className = 'prize-name-input';
+                prizeNameInput.value = prize.name;
+
+                const prizeProbabilityInput = document.createElement('input');
+                prizeProbabilityInput.type = 'number';
+                prizeProbabilityInput.className = 'prize-probability-input';
+                prizeProbabilityInput.step = 'any';
+                prizeProbabilityInput.min = '0';
+                prizeProbabilityInput.max = '100';
+                prizeProbabilityInput.value = (prize.probability * 100).toFixed(2);
+
+                const editButton = document.createElement('button');
+                editButton.textContent = '编辑';
+                editButton.onclick = () => editPrize(index);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '删除';
+                deleteButton.onclick = () => deletePrize(index);
+
+                const sourceLabel = document.createElement('div');
+                sourceLabel.className = 'source-label';
+                sourceLabel.textContent = prize.source ? `源于${prize.source}` : '';
+
+                div.appendChild(prizeNameInput);
+                div.appendChild(prizeProbabilityInput);
+                div.appendChild(editButton);
+                div.appendChild(deleteButton);
+                div.appendChild(sourceLabel);
+
+                adminPrizesListElement.appendChild(div);
+            });
+        }
+
+        // 更新奖品列表显示 (普通成员)
+        function updatePrizeList() {
+            const prizeListElement = document.getElementById('prizeList');
+            prizeListElement.innerHTML = '<h3>奖品列表</h3>';
+
+            prizes.forEach((prize, index) => {
+                const p = document.createElement('p');
+                p.textContent = `${prize.name} (概率: ${(prize.probability * 100).toFixed(2)}%)`;
+                prizeListElement.appendChild(p);
+            });
+        }
+
+        // 开始抽奖
+        function drawPrize(isSingleDraw = true) {
+            if (loggedInMember.balance < 50) {
+                alert('余额不足，无法抽奖');
+                return;
+            }
+
+            let randomValue = Math.random();
+            let cumulativeProbability = 0;
+            let drawnPrize = null;
+
+            for (let i = 0; i < prizes.length; i++) {
+                cumulativeProbability += prizes[i].probability;
+                if (randomValue < cumulativeProbability) {
+                    drawnPrize = prizes[i];
+                    break;
+                }
+            }
+
+            const resultText = drawnPrize ? `恭喜您抽到了: ${drawnPrize.name}` : '很遗憾，没有抽到任何奖品';
+            document.getElementById('result').textContent = resultText;
+
+            const currentTime = new Date().toLocaleString();
+            drawHistory.unshift({
+                memberId: loggedInMember.id,
+                memberName: loggedInMember.name,
+                result: resultText,
+                time: currentTime,
+                cost: 50
+            });
+
+            loggedInMember.balance -= 50;
+            document.getElementById('memberBalanceDisplay').textContent = loggedInMember.balance;
+
+            updateDrawHistory(isSingleDraw);
+        }
+
+        // 十连抽
+        function soloHa() {
+            if (loggedInMember.balance < 500) {
+                alert('余额不足，无法进行十连抽');
+                return;
+            }
+
+            for (let i = 0; i < 10; i++) {
+                drawPrize(false);
+            }
+        }
+
+        // 更新抽奖记录显示
+        function updateDrawHistory(isSingleDraw = true) {
+            const historyElement = document.getElementById('drawHistory');
+            const newItems = [];
+
+            for (let i = 0; i < (isSingleDraw ? 1 : 10); i++) {
+                const record = drawHistory[i];
+                const li = document.createElement('li');
+                li.textContent = `编号: ${record.memberId}, 姓名: ${record.memberName}, 结果: ${record.result}, 时间: ${record.time}, 消耗金额: ${record.cost}`;
+                newItems.push(li);
+            }
+
+            newItems.forEach(item => {
+                item.classList.add('flash');
+                historyElement.insertBefore(item, historyElement.firstChild);
+            });
+
+            // Remove old items if necessary
+            while (historyElement.children.length > 100) {
+                historyElement.removeChild(historyElement.lastChild);
+            }
+        }
+
+        // 从Excel导入奖品
+        function importPrizesFromExcel() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsx';
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    alert('请选择一个有效的Excel文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: ['name', 'probability'] });
+
+                    let totalProbability = calculateTotalProbability();
+
+                    jsonData.forEach(entry => {
+                        const prizeName = entry.name.trim();
+                        const prizeProbability = parseFloat(entry.probability);
+
+                        if (!prizeName || isNaN(prizeProbability) || prizeProbability <= 0 || prizeProbability > 100) {
+                            alert(`无效的奖品数据: 名称=${prizeName}, 概率=${entry.probability}`);
+                            return;
+                        }
+
+                        if (prizes.some(prize => prize.name === prizeName)) {
+                            alert(`奖品名称已存在: ${prizeName}`);
+                            return;
+                        }
+
+                        if (totalProbability + prizeProbability / 100 > 1) {
+                            alert('总中奖概率不能超过100%');
+                            return;
+                        }
+
+                        prizes.push({ name: prizeName, probability: prizeProbability / 100, source: file.name });
+                        totalProbability += prizeProbability / 100;
+                    });
+
+                    updateAdminPrizeList();
+                };
+
+                reader.onerror = function() {
+                    alert('无法读取文件，请重试。');
+                };
+
+                reader.readAsArrayBuffer(file);
+            };
+            fileInput.click();
+        }
+
+        // 导出奖品设置为Excel
+        function exportPrizesToExcel() {
+            const worksheetData = [['奖品名称', '中奖概率 (%)']];
+            prizes.forEach(prize => {
+                worksheetData.push([prize.name, (prize.probability * 100).toFixed(2)]);
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+            XLSX.writeFile(workbook, '奖品设置.xlsx');
+        }
+
+        // 导出抽奖记录为Excel
+        function exportToExcel() {
+            const worksheetData = [['成员编号', '成员姓名', '抽奖结果', '抽奖时间', '消耗金额']];
+            drawHistory.forEach(record => {
+                worksheetData.push([record.memberId, record.memberName, record.result, record.time, record.cost]);
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+            XLSX.writeFile(workbook, '抽奖记录.xlsx');
+        }
+    </script>
+</body>
+</html>
+
+
