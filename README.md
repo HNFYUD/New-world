@@ -16,7 +16,7 @@ A personal projects Library to test something funny
 #
 ## 如何使用？
 # 1.创建数据文件
-（必须）新建一个.xlsx的空白表格，然后再A、B、C列依次填入 编号（验证用）、用户名、可用点数，保存文件。（在Example files文件夹中可以找到名为list.xlsx的示例用户名单）
+（必须）新建一个.xlsx的空白表格，然后再A、B、C列依次填入 编号（验证用，长度8位）、用户名、可用点数，保存文件。（在Example files文件夹中可以找到名为list.xlsx的示例用户名单）
 （选择）新建一个.xlsx的空白表格，然后再A、B列依次填入奖品名称与概率（%），保存文件 。（在Example files文件夹中可以找到名为Items and Probabilities.xlsx的示例物品清单）
 # 2.启动程序
 使用内核版本高于 IE 9.0 的浏览器打开HTML文件。
@@ -46,7 +46,7 @@ Everyone is welcome to join in the improvement and development of this program!
 COMMERCIAL USE OF THIS SOFTWARE IS PROHIBITED !
 ## HOW TO USE?
 # 1.Create a data file
-Create a new blank form for .xlsx, and then fill in columns A B and C with the number (for authentication), user name, and number of available points in order to save the file. (A list of sample users named list.xlsx can be found in the Example files folder)
+Create a new blank form for .xlsx, and then fill in columns A B and C with the number (for authentication，and 8-bits length), user name, and number of available points in order to save the file. (A list of sample users named list.xlsx can be found in the Example files folder)
 (Select) Create a new blank table for .xlsx, and then fill in the prize name and probability (%) in columns A and B in order to save the file. (A list of sample items called Items and Probabilities.xlsx can be found in the Example files folder)
 # 2.Launch the program
 Open the HTML file in a browser with a kernel version higher than IE 9.0.
